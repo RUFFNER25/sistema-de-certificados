@@ -1,17 +1,15 @@
 {
-  "name": "sistema-certificados",
+  "name": "sistema-de-certificados",
   "version": "1.0.0",
-  "private": true,
+  "description": "Root project for Sistema de Certificados",
   "scripts": {
-    "dev": "npm-run-all --parallel dev:backend dev:frontend",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
-    "build": "cd frontend && npm run build",
-    "start": "cd backend && npm start"
+    "db:setup": "createdb sistema_certificados || echo 'Database might already exist'"
   },
   "devDependencies": {
-    "npm-run-all": "^4.1.5"
+    "concurrently": "^8.2.2"
   }
 }
-
-
