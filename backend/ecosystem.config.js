@@ -11,12 +11,11 @@ module.exports = {
         NODE_ENV: 'development',
         PORT: 4000
       },
-      env_production: {
-        NODE_ENV: 'production',
-        PORT: 4000,
-        // Aquí puedes agregar otras variables si no usas archivo .env
-        // O mejor aún, PM2 leerá tu archivo .env si existe en el directorio
-      }
+  env: {
+      NODE_ENV: 'production',
+      PORT: 4000,
+      DATABASE_URL: 'postgres://sitech_user:TuContraseñaSegura123@localhost:5432/sistema_certificados'
+    }
     }
   ]
 };
