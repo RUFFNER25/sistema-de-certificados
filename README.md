@@ -227,3 +227,4 @@ cd ../frontend && npm run dev
 Con eso debería poder levantar exactamente el mismo entorno que tú.
 
 
+

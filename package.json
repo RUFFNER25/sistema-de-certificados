@@ -1,7 +1,7 @@
 {
   "name": "sistema-de-certificados",
   "version": "1.0.0",
-  "description": "Root project for Sistema de Certificados",
+  "description": "Sistema de gestión de certificados",
   "scripts": {
     "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
@@ -13,3 +13,5 @@
     "concurrently": "^8.2.2"
   }
 }
+
+

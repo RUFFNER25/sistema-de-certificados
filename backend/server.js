@@ -64,9 +64,44 @@ async function initDb() {
         nombre TEXT NOT NULL,
         dni TEXT NOT NULL,
         archivo TEXT NOT NULL,
+        tipo TEXT,
+        codigo TEXT,
+        certificado_nombre TEXT,
+        duracion TEXT,
+        fecha_emision DATE,
+        fecha_caducidad DATE,
         creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Agregar nuevas columnas si no existen (para migración de datos existentes)
+    const columnChecks = [
+      { name: 'tipo', type: 'TEXT' },
+      { name: 'codigo', type: 'TEXT' },
+      { name: 'certificado_nombre', type: 'TEXT' },
+      { name: 'duracion', type: 'TEXT' },
+      { name: 'fecha_emision', type: 'DATE' },
+      { name: 'fecha_caducidad', type: 'DATE' },
+    ];
+
+    for (const col of columnChecks) {
+      try {
+        await client.query(`
+          DO $$ 
+          BEGIN
+            IF NOT EXISTS (
+              SELECT 1 FROM information_schema.columns 
+              WHERE table_name = 'certificados' AND column_name = '${col.name}'
+            ) THEN
+              ALTER TABLE certificados ADD COLUMN ${col.name} ${col.type};
+            END IF;
+          END $$;
+        `);
+      } catch (err) {
+        // Si falla, la columna probablemente ya existe, continuar
+        console.log(`Columna ${col.name} ya existe o error al agregar:`, err.message);
+      }
+    }
 
     // Tabla usuarios (admin)
     await client.query(`
@@ -152,7 +187,16 @@ app.use('/files', express.static(uploadsDir));
 // Crear certificado (PROTEGIDO)
 app.post('/api/certificados', authenticateToken, upload.single('archivo'), async (req, res) => {
   try {
-    const { nombre, dni } = req.body;
+    const { 
+      nombre, 
+      dni, 
+      tipo, 
+      codigo, 
+      certificado_nombre, 
+      duracion, 
+      fecha_emision, 
+      fecha_caducidad 
+    } = req.body;
 
     if (!nombre || !dni) {
       return res.status(400).json({ error: 'nombre y dni son obligatorios' });
@@ -162,9 +206,33 @@ app.post('/api/certificados', authenticateToken, upload.single('archivo'), async
       return res.status(400).json({ error: 'archivo PDF obligatorio' });
     }
 
+    // Validar que DNI solo contenga números
+    if (!/^\d+$/.test(dni.trim())) {
+      return res.status(400).json({ error: 'El DNI solo debe contener números' });
+    }
+
+    // Convertir fecha_caducidad vacía o guion a NULL
+    const fechaCaducidadFinal = (!fecha_caducidad || fecha_caducidad.trim() === '' || fecha_caducidad === '-') 
+      ? null 
+      : fecha_caducidad;
+
     const result = await pool.query(
-      'INSERT INTO certificados (nombre, dni, archivo) VALUES ($1, $2, $3) RETURNING id, creado_en',
-      [nombre.trim(), dni.trim(), req.file.filename]
+      `INSERT INTO certificados (
+        nombre, dni, archivo, tipo, codigo, certificado_nombre, 
+        duracion, fecha_emision, fecha_caducidad
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+      RETURNING id, creado_en, fecha_emision, fecha_caducidad`,
+      [
+        nombre.trim(), 
+        dni.trim(), 
+        req.file.filename,
+        tipo?.trim() || null,
+        codigo?.trim() || null,
+        certificado_nombre?.trim() || null,
+        duracion?.trim() || null,
+        fecha_emision || null,
+        fechaCaducidadFinal
+      ]
     );
     const row = result.rows[0];
 
@@ -173,6 +241,12 @@ app.post('/api/certificados', authenticateToken, upload.single('archivo'), async
       nombre,
       dni,
       archivo: req.file.filename,
+      tipo: row.tipo,
+      codigo: row.codigo,
+      certificado_nombre: row.certificado_nombre,
+      duracion: row.duracion,
+      fecha_emision: row.fecha_emision,
+      fecha_caducidad: row.fecha_caducidad,
       creado_en: row.creado_en,
       url: `/files/${req.file.filename}`,
     });
@@ -190,15 +264,18 @@ app.get('/api/certificados', async (req, res) => {
     let rows;
     if (!q) {
       const result = await pool.query(
-        'SELECT id, nombre, dni, archivo, creado_en FROM certificados ORDER BY creado_en DESC LIMIT 50'
+        `SELECT id, nombre, dni, archivo, tipo, codigo, certificado_nombre, 
+         duracion, fecha_emision, fecha_caducidad, creado_en 
+         FROM certificados ORDER BY creado_en DESC LIMIT 50`
       );
       rows = result.rows;
     } else {
       const like = `%${q.trim()}%`;
       const result = await pool.query(
-        `SELECT id, nombre, dni, archivo, creado_en
+        `SELECT id, nombre, dni, archivo, tipo, codigo, certificado_nombre, 
+         duracion, fecha_emision, fecha_caducidad, creado_en
          FROM certificados
-         WHERE nombre ILIKE $1 OR dni ILIKE $1
+         WHERE nombre ILIKE $1 OR dni ILIKE $1 OR codigo ILIKE $1
          ORDER BY creado_en DESC`,
         [like]
       );

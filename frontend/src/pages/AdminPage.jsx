@@ -5,7 +5,17 @@ import { useAuth } from '../context/AuthContext'
 
 export default function AdminPage() {
   const [resultados, setResultados] = useState([])
-  const [form, setForm] = useState({ nombre: '', dni: '', archivo: null })
+  const [form, setForm] = useState({ 
+    nombre: '', 
+    dni: '', 
+    tipo: '',
+    codigo: '',
+    certificado_nombre: '',
+    duracion: '',
+    fecha_emision: '',
+    fecha_caducidad: '',
+    archivo: null 
+  })
   const [subiendo, setSubiendo] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [error, setError] = useState('')
@@ -42,19 +52,37 @@ export default function AdminPage() {
     setForm((prev) => ({ ...prev, archivo: file }))
   }
 
+  const manejarCambioDNI = (e) => {
+    const valor = e.target.value
+    // Solo permitir números
+    if (valor === '' || /^\d+$/.test(valor)) {
+      setForm((prev) => ({ ...prev, dni: valor }))
+    }
+  }
+
+  const manejarCambioCampo = (campo) => (e) => {
+    setForm((prev) => ({ ...prev, [campo]: e.target.value }))
+  }
+
   const manejarSubmit = async (e) => {
     e.preventDefault()
     setMensaje('')
     setError('')
 
     if (!form.nombre || !form.dni || !form.archivo) {
-      setError('Todos los campos son obligatorios (Nombre, DNI, PDF)')
+      setError('Los campos obligatorios son: Nombre, DNI y Archivo PDF')
       return
     }
 
     const formData = new FormData()
     formData.append('nombre', form.nombre)
     formData.append('dni', form.dni)
+    formData.append('tipo', form.tipo || '')
+    formData.append('codigo', form.codigo || '')
+    formData.append('certificado_nombre', form.certificado_nombre || '')
+    formData.append('duracion', form.duracion || '')
+    formData.append('fecha_emision', form.fecha_emision || '')
+    formData.append('fecha_caducidad', form.fecha_caducidad || '')
     formData.append('archivo', form.archivo)
 
     setSubiendo(true)
@@ -73,10 +101,20 @@ export default function AdminPage() {
       }
 
       setMensaje('Certificado creado exitosamente.')
-      setForm({ nombre: '', dni: '', archivo: null })
-      // Reset input file manually if needed, or rely on key reset. 
-      // Simple way: clear the input value by id or just let react state handle it if it was controlled (file input is tricky).
-      document.getElementById('fileInput').value = ''
+      setForm({ 
+        nombre: '', 
+        dni: '', 
+        tipo: '',
+        codigo: '',
+        certificado_nombre: '',
+        duracion: '',
+        fecha_emision: '',
+        fecha_caducidad: '',
+        archivo: null 
+      })
+      // Reset input file manually
+      const fileInput = document.getElementById('fileInput')
+      if (fileInput) fileInput.value = ''
       
       cargarCertificados(filtro)
     } catch (err) {
@@ -138,7 +176,10 @@ export default function AdminPage() {
                   <tr>
                     <th>Nombre</th>
                     <th>DNI</th>
-                    <th>Fecha Creación</th>
+                    <th>Tipo</th>
+                    <th>Código</th>
+                    <th>Fecha Emisión</th>
+                    <th>Fecha Caducidad</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -147,7 +188,18 @@ export default function AdminPage() {
                     <tr key={c.id}>
                       <td>{c.nombre}</td>
                       <td>{c.dni}</td>
-                      <td>{new Date(c.creado_en).toLocaleDateString()}</td>
+                      <td>{c.tipo || '-'}</td>
+                      <td>{c.codigo || '-'}</td>
+                      <td>
+                        {c.fecha_emision 
+                          ? new Date(c.fecha_emision).toLocaleDateString() 
+                          : '-'}
+                      </td>
+                      <td>
+                        {c.fecha_caducidad 
+                          ? new Date(c.fecha_caducidad).toLocaleDateString() 
+                          : '-'}
+                      </td>
                       <td>
                         <a href={`${API_BASE}${c.url}`} target="_blank" rel="noreferrer">
                           Ver PDF
@@ -164,30 +216,99 @@ export default function AdminPage() {
             <h2>Nuevo Certificado</h2>
             <form className="form" onSubmit={manejarSubmit}>
               <label>
-                Nombre Completo
+                Nombres y Apellidos *
                 <input
                   type="text"
                   value={form.nombre}
-                  onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                  onChange={manejarCambioCampo('nombre')}
                   placeholder="Ej: Juan Perez"
+                  required
                 />
               </label>
+              
               <label>
-                DNI / Documento
+                DNI * (solo números)
                 <input
                   type="text"
                   value={form.dni}
-                  onChange={(e) => setForm({ ...form, dni: e.target.value })}
+                  onChange={manejarCambioDNI}
                   placeholder="Ej: 12345678"
+                  required
                 />
               </label>
+
               <label>
-                Archivo PDF
+                Tipo
+                <select
+                  value={form.tipo}
+                  onChange={manejarCambioCampo('tipo')}
+                >
+                  <option value="">Seleccionar tipo</option>
+                  <option value="Curso">Curso</option>
+                  <option value="Taller">Taller</option>
+                  <option value="Programa">Programa</option>
+                  <option value="Diplomado">Diplomado</option>
+                  <option value="Inducción">Inducción</option>
+                </select>
+              </label>
+
+              <label>
+                Código
+                <input
+                  type="text"
+                  value={form.codigo}
+                  onChange={manejarCambioCampo('codigo')}
+                  placeholder="Ej: CERT-2024-001"
+                />
+              </label>
+
+              <label>
+                Certificado (Nombre del certificado)
+                <input
+                  type="text"
+                  value={form.certificado_nombre}
+                  onChange={manejarCambioCampo('certificado_nombre')}
+                  placeholder="Ej: Certificado de Finalización"
+                />
+              </label>
+
+              <label>
+                Duración
+                <input
+                  type="text"
+                  value={form.duracion}
+                  onChange={manejarCambioCampo('duracion')}
+                  placeholder="Ej: 40 horas"
+                />
+              </label>
+
+              <label>
+                Fecha de Emisión
+                <input
+                  type="date"
+                  value={form.fecha_emision}
+                  onChange={manejarCambioCampo('fecha_emision')}
+                />
+              </label>
+
+              <label>
+                Fecha de Caducidad (opcional)
+                <input
+                  type="date"
+                  value={form.fecha_caducidad}
+                  onChange={manejarCambioCampo('fecha_caducidad')}
+                  placeholder="Dejar en blanco si no tiene caducidad"
+                />
+              </label>
+
+              <label>
+                Archivo PDF *
                 <input 
                   id="fileInput"
                   type="file" 
                   accept="application/pdf" 
-                  onChange={manejarCambioArchivo} 
+                  onChange={manejarCambioArchivo}
+                  required
                 />
               </label>
 
