@@ -1,0 +1,212 @@
+<!-- WIDGET BUSCADOR DE CERTIFICADOS - JC ECOGUARDIANS -->
+<div id="cert-widget-container">
+  <style>
+    :root {
+      --primary: #08a696;
+      --accent-green: #8cbf3f;
+      --accent-green-hover: #7da836;
+      --text-main: #1e293b;
+      --text-secondary: #64748b;
+      --border-color: #e2e8f0;
+    }
+
+    #cert-widget-container {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      color: var(--text-main);
+    }
+
+    .widget-search-section {
+      background: var(--primary);
+      padding: 40px 20px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 30px;
+      color: white;
+    }
+
+    .widget-title {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 25px;
+    }
+
+    .widget-search-form {
+      background: white;
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      flex-wrap: wrap;
+    }
+
+    .widget-select, .widget-input {
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text-main);
+    }
+
+    .widget-select { flex: 1; min-width: 150px; cursor: pointer; }
+    .widget-input { flex: 2; min-width: 200px; }
+
+    .widget-btn {
+      padding: 12px 24px;
+      background: var(--accent-green);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .widget-btn:hover { background: var(--accent-green-hover); }
+
+    /* BLOQUES DE RESULTADOS (IDÉNTICOS A TU DISEÑO) */
+    .certificate-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .cert-res-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .cert-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .cert-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      background: #f8fafc;
+      border-radius: 6px;
+    }
+
+    .cert-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .cert-icon svg { width: 16px; height: 16px; }
+
+    .cert-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; display: block; }
+    .cert-value { font-size: 13px; font-weight: 700; color: var(--text-main); }
+
+    .cert-download {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--accent-green);
+      color: white;
+      text-decoration: none;
+      padding: 14px;
+      border-radius: 6px;
+      font-weight: 700;
+      margin-top: 20px;
+      transition: 0.2s;
+    }
+    .cert-download:hover { background: var(--accent-green-hover); }
+
+    @media (max-width: 600px) { .widget-search-form { flex-direction: column; } }
+  </style>
+
+  <div class="widget-search-section">
+    <h2 class="widget-title">Validar certificados</h2>
+    <form class="widget-search-form" id="certForm">
+      <select id="certType" class="widget-select">
+        <option value="dni">DNI</option>
+        <option value="nombre">Nombres y apellidos</option>
+        <option value="codigo">Código</option>
+      </select>
+      <input type="text" id="certInput" class="widget-input" placeholder="Ej: 70552292">
+      <button type="submit" id="certBtn" class="widget-btn">BUSCAR</button>
+    </form>
+    <div id="certMsg" style="margin-top: 15px; font-size: 13px;"></div>
+  </div>
+
+  <div id="certResults"></div>
+
+  <script>
+    (function() {
+      const API = 'http://localhost:4000'; // CAMBIAR POR TU IP/DOMINIO VPS
+      const form = document.getElementById('certForm');
+      const results = document.getElementById('certResults');
+      const msg = document.getElementById('certMsg');
+
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const query = document.getElementById('certInput').value.trim();
+        if(!query) return alert('Ingrese un valor');
+
+        document.getElementById('certBtn').innerText = 'BUSCANDO...';
+        results.innerHTML = '';
+        msg.innerText = '';
+
+        try {
+          const r = await fetch(`${API}/api/certificados?q=${encodeURIComponent(query)}`);
+          const data = await r.json();
+          
+          if(data.length === 0) {
+            msg.innerText = 'No se encontraron resultados.';
+          } else {
+            results.innerHTML = data.map(c => `
+              <div class="certificate-card">
+                <h3 class="cert-res-title">Resultado de búsqueda:</h3>
+                <div class="cert-grid">
+                  ${item('Nombres:', c.nombre, '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>')}
+                  ${item('DNI:', c.dni, '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>')}
+                  ${c.tipo ? item('Tipo:', c.tipo, '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>') : ''}
+                  ${c.codigo ? item('Código:', c.codigo, '<path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>') : ''}
+                  ${c.certificado_nombre ? item('Certificado:', c.certificado_nombre, '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>') : ''}
+                  ${c.fecha_emision ? item('Emisión:', new Date(c.fecha_emision).toLocaleDateString('es-PE'), '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/>') : ''}
+                </div>
+                <a href="${API}${c.url}" target="_blank" class="cert-download">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  DESCARGAR CERTIFICADO
+                </a>
+              </div>
+            `).join('');
+          }
+        } catch(e) { 
+          msg.innerText = 'Error de conexión con el servidor.';
+        } finally {
+          document.getElementById('certBtn').innerText = 'BUSCAR';
+        }
+      };
+
+      function item(l, v, svg) {
+        return `
+          <div class="cert-item">
+            <div class="cert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg></div>
+            <div><span class="cert-label">${l}</span><span class="cert-value">${v}</span></div>
+          </div>
+        `;
+      }
+    })();
+  </script>
+</div>
