@@ -184,7 +184,8 @@
 
   <script>
     (function() {
-      const API = 'http://localhost:4000'; // CAMBIAR POR TU IP/DOMINIO VPS
+      const API = 'https://admincertificados.jcecoguardians.com'; // Producción
+      // const API = 'http://localhost:4000'; // Desarrollo local
       const form = document.getElementById('certForm');
       const results = document.getElementById('certResults');
       const msg = document.getElementById('certMsg');
@@ -250,23 +251,3 @@
     })();
   </script>
 </div>
-
-# Admin subdomain
-server {
-    server_name admin.bnbtingo.online www.admin.bnbtingo.online;
-
-    client_max_body_size 10M;
-
-    # Redirect from / to /admin
-    location = / {
-        return 301 http://admin.bnbtingo.online/admin;
-    }
-
-    location / {
-        proxy_pass http://localhost:6000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
