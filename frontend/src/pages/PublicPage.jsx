@@ -121,184 +121,101 @@ export default function PublicPage() {
           </div>
         ) : (
           <>
-        <h2 className="public-results-title">
-              {busqueda ? `Resultados para "${busqueda}"` : 'Resultados de búsqueda'}
-        </h2>
+        <h2 className="public-results-title">Los resultados para tu búsqueda:</h2>
 
         {resultados.length === 0 ? (
           <div className="public-no-results">
-                No se encontraron certificados con esos datos.
+            No se encontraron certificados con esos datos.
           </div>
         ) : (
           <div className="public-results-list">
             {resultados.map((c) => (
-                  <article className="certificate-card" key={c.id}>
-                    {/* Título de la sección */}
-                    <h3 className="certificate-section-title">Resultados de la búsqueda:</h3>
-
-                    {/* Información del certificado con iconos */}
-                    <div className="certificate-info-grid">
-                      <div className="certificate-info-item">
-                        <div className="certificate-icon-wrapper">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                        <div className="certificate-info-content">
-                          <span className="certificate-info-label">Nombres y apellidos:</span>
-                          <span className="certificate-info-value">{c.nombre}</span>
-                        </div>
-                      </div>
-
-                      <div className="certificate-info-item">
-                        <div className="certificate-icon-wrapper">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                        <div className="certificate-info-content">
-                          <span className="certificate-info-label">DNI:</span>
-                          <span className="certificate-info-value">{c.dni}</span>
-                        </div>
-                      </div>
-
-                      {c.tipo && (
-                        <div className="certificate-info-item">
-                          <div className="certificate-icon-wrapper">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <polyline points="14 2 14 8 20 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                          <div className="certificate-info-content">
-                            <span className="certificate-info-label">Tipo:</span>
-                            <span className="certificate-info-value">{c.tipo}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {c.codigo && (
-                        <div className="certificate-info-item">
-                          <div className="certificate-icon-wrapper">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                          <div className="certificate-info-content">
-                            <span className="certificate-info-label">Código:</span>
-                            <span className="certificate-info-value">{c.codigo}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {c.certificado_nombre && (
-                        <div className="certificate-info-item">
-                          <div className="certificate-icon-wrapper">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <polyline points="14 2 14 8 20 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                          <div className="certificate-info-content">
-                            <span className="certificate-info-label">Certificado:</span>
-                            <span className="certificate-info-value">{c.certificado_nombre}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {c.duracion && (
-                        <div className="certificate-info-item">
-                          <div className="certificate-icon-wrapper">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <polyline points="12 6 12 12 16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                          <div className="certificate-info-content">
-                            <span className="certificate-info-label">Duración:</span>
-                            <span className="certificate-info-value">{c.duracion}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {c.fecha_emision && (
-                        <div className="certificate-info-item">
-                          <div className="certificate-icon-wrapper">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                          <div className="certificate-info-content">
-                            <span className="certificate-info-label">Fecha de emisión:</span>
-                            <span className="certificate-info-value">
-                              {new Date(c.fecha_emision).toLocaleDateString('es-PE')}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {c.fecha_caducidad ? (
-                        <div className="certificate-info-item">
-                          <div className="certificate-icon-wrapper">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                          <div className="certificate-info-content">
-                            <span className="certificate-info-label">Fecha de caducidad:</span>
-                            <span className="certificate-info-value">
-                              {new Date(c.fecha_caducidad).toLocaleDateString('es-PE')}
-                            </span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="certificate-info-item">
-                          <div className="certificate-icon-wrapper">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                  </div>
-                          <div className="certificate-info-content">
-                            <span className="certificate-info-label">Fecha de caducidad:</span>
-                            <span className="certificate-info-value">-</span>
-                  </div>
+              <article className="result-card" key={c.id}>
+                <div className="result-card-header">
+                  <span className="result-card-avatar" aria-hidden>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                  <span className="result-card-name">{c.nombre}</span>
                 </div>
-                      )}
-                    </div>
-
-                    {/* Botón de descarga con icono PDF */}
-                    <div className="certificate-footer">
-                  <a
-                    href={`${API_BASE}${c.url}`}
-                    target="_blank"
-                    rel="noreferrer"
-                        className="certificate-download-btn"
-                      >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <polyline points="14 2 14 8 20 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <polyline points="10 9 9 9 8 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <hr className="result-card-divider" />
+                <div className="result-card-title-block">
+                  <h3 className="result-card-cert-title">{c.certificado_nombre || 'Certificado'}</h3>
+                  {c.tipo && <span className="result-card-type">{c.tipo}</span>}
+                </div>
+                <ul className="result-card-meta">
+                  <li className="result-card-meta-item">
+                    <span className="result-card-meta-icon" aria-hidden>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" strokeWidth="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2"/>
+                        <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2"/>
+                        <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
+                      </svg>
+                    </span>
+                    <span>DNI: {c.dni}</span>
+                  </li>
+                  {c.codigo && (
+                    <li className="result-card-meta-item">
+                      <span className="result-card-meta-icon" aria-hidden>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
-                        Descargar
-                  </a>
-                </div>
+                      </span>
+                      <span>Código: {c.codigo}</span>
+                    </li>
+                  )}
+                  {c.duracion && (
+                    <li className="result-card-meta-item">
+                      <span className="result-card-meta-icon" aria-hidden>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                          <polyline points="12 6 12 12 16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </span>
+                      <span>Duración: {c.duracion}</span>
+                    </li>
+                  )}
+                  {c.fecha_emision && (
+                    <li className="result-card-meta-item">
+                      <span className="result-card-meta-icon" aria-hidden>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" strokeWidth="2"/>
+                          <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2"/>
+                          <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2"/>
+                          <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
+                        </svg>
+                      </span>
+                      <span>Fecha de emisión: {new Date(c.fecha_emision).toLocaleDateString('es-PE')}</span>
+                    </li>
+                  )}
+                  <li className="result-card-meta-item">
+                    <span className="result-card-meta-icon" aria-hidden>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" strokeWidth="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2"/>
+                        <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2"/>
+                        <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
+                      </svg>
+                    </span>
+                    <span>Fecha de caducidad: {c.fecha_caducidad ? new Date(c.fecha_caducidad).toLocaleDateString('es-PE') : '-'}</span>
+                  </li>
+                </ul>
+                <a
+                  href={`${API_BASE}${c.url}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="result-card-download"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <polyline points="7 10 12 15 17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Descargar
+                </a>
               </article>
             ))}
           </div>

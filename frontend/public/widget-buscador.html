@@ -66,73 +66,104 @@
 
     .widget-btn:hover { background: var(--accent-green-hover); }
 
-    /* BLOQUES DE RESULTADOS (IDÉNTICOS A TU DISEÑO) */
-    .certificate-card {
+    /* Título único de resultados */
+    .widget-results-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--text-main);
+    }
+
+    /* Lista de tarjetas compactas */
+    .widget-results-list { display: flex; flex-direction: column; gap: 20px; }
+
+    .result-card {
       background: white;
       border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 24px;
-      margin-bottom: 25px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      border-radius: 10px;
+      padding: 20px 24px;
+      max-width: 520px;
+      transition: box-shadow 0.2s;
     }
+    .result-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 
-    .cert-res-title {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 15px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid var(--border-color);
-    }
-
-    .cert-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 12px;
-    }
-
-    .cert-item {
+    .result-card-header {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 10px;
-      background: #f8fafc;
-      border-radius: 6px;
     }
-
-    .cert-icon {
-      width: 32px;
-      height: 32px;
-      background: var(--primary);
-      border-radius: 6px;
+    .result-card-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #f1f5f9;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
+      color: #64748b;
       flex-shrink: 0;
     }
+    .result-card-avatar svg { width: 20px; height: 20px; }
+    .result-card-name { font-size: 16px; font-weight: 600; color: var(--text-main); }
 
-    .cert-icon svg { width: 16px; height: 16px; }
+    .result-card-divider {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 14px 0 16px;
+    }
 
-    .cert-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; display: block; }
-    .cert-value { font-size: 13px; font-weight: 700; color: var(--text-main); }
+    .result-card-title-block { margin-bottom: 14px; }
+    .result-card-cert-title { font-size: 16px; font-weight: 700; color: var(--text-main); margin: 0 0 4px; }
+    .result-card-type { font-size: 14px; color: var(--text-secondary); }
 
-    .cert-download {
+    .result-card-meta {
+      list-style: none;
+      margin: 0 0 18px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .result-card-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-main);
+    }
+    .result-card-meta-icon {
+      width: 20px;
+      height: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      background: var(--accent-green);
-      color: white;
-      text-decoration: none;
-      padding: 14px;
-      border-radius: 6px;
-      font-weight: 700;
-      margin-top: 20px;
-      transition: 0.2s;
+      color: var(--primary);
+      flex-shrink: 0;
     }
-    .cert-download:hover { background: var(--accent-green-hover); }
+    .result-card-meta-icon svg { width: 14px; height: 14px; }
 
-    @media (max-width: 600px) { .widget-search-form { flex-direction: column; } }
+    .result-card-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      background: white;
+      color: var(--text-main);
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .result-card-download:hover {
+      background: #f8fafc;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .result-card-download svg { width: 18px; height: 18px; }
+
+    @media (max-width: 600px) { .widget-search-form { flex-direction: column; } .result-card { padding: 16px; } }
   </style>
 
   <div class="widget-search-section">
@@ -174,23 +205,34 @@
           if(data.length === 0) {
             msg.innerText = 'No se encontraron resultados.';
           } else {
-            results.innerHTML = data.map(c => `
-              <div class="certificate-card">
-                <h3 class="cert-res-title">Resultado de búsqueda:</h3>
-                <div class="cert-grid">
-                  ${item('Nombres:', c.nombre, '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>')}
-                  ${item('DNI:', c.dni, '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>')}
-                  ${c.tipo ? item('Tipo:', c.tipo, '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>') : ''}
-                  ${c.codigo ? item('Código:', c.codigo, '<path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>') : ''}
-                  ${c.certificado_nombre ? item('Certificado:', c.certificado_nombre, '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>') : ''}
-                  ${c.fecha_emision ? item('Emisión:', new Date(c.fecha_emision).toLocaleDateString('es-PE'), '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/>') : ''}
+            const cal = (d) => d ? new Date(d).toLocaleDateString('es-PE') : '-';
+            const iconCal = '<rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>';
+            const metaRow = (svg, text) => `<li class="result-card-meta-item"><span class="result-card-meta-icon" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg></span><span>${text}</span></li>`;
+
+            results.innerHTML = '<h2 class="widget-results-title">Los resultados para tu búsqueda:</h2><div class="widget-results-list">' + data.map(c => `
+              <article class="result-card">
+                <div class="result-card-header">
+                  <span class="result-card-avatar" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                  <span class="result-card-name">${escapeHtml(c.nombre)}</span>
                 </div>
-                <a href="${API}${c.url}" target="_blank" class="cert-download">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                  DESCARGAR CERTIFICADO
+                <hr class="result-card-divider">
+                <div class="result-card-title-block">
+                  <h3 class="result-card-cert-title">${escapeHtml(c.certificado_nombre || 'Certificado')}</h3>
+                  ${c.tipo ? `<span class="result-card-type">${escapeHtml(c.tipo)}</span>` : ''}
+                </div>
+                <ul class="result-card-meta">
+                  ${metaRow('<rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 2v4M8 2v4M3 10h18"/>', 'DNI: ' + escapeHtml(c.dni))}
+                  ${c.codigo ? metaRow('<path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" stroke="currentColor" stroke-width="2"/>', 'Código: ' + escapeHtml(c.codigo)) : ''}
+                  ${c.duracion ? metaRow('<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" stroke="currentColor" stroke-width="2"/>', 'Duración: ' + escapeHtml(c.duracion)) : ''}
+                  ${c.fecha_emision ? metaRow(iconCal, 'Fecha de emisión: ' + cal(c.fecha_emision)) : ''}
+                  ${metaRow(iconCal, 'Fecha de caducidad: ' + cal(c.fecha_caducidad))}
+                </ul>
+                <a href="${API}${c.url}" target="_blank" rel="noopener" class="result-card-download">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Descargar
                 </a>
-              </div>
-            `).join('');
+              </article>
+            `).join('') + '</div>';
           }
         } catch(e) { 
           msg.innerText = 'Error de conexión con el servidor.';
@@ -199,13 +241,11 @@
         }
       };
 
-      function item(l, v, svg) {
-        return `
-          <div class="cert-item">
-            <div class="cert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg></div>
-            <div><span class="cert-label">${l}</span><span class="cert-value">${v}</span></div>
-          </div>
-        `;
+      function escapeHtml(s) {
+        if (!s) return '';
+        const div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
       }
     })();
   </script>

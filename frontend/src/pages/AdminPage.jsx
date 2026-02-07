@@ -9,6 +9,7 @@ export default function AdminPage() {
     nombre: '', 
     dni: '', 
     tipo: '',
+    tipo_otro: '',
     codigo: '',
     certificado_nombre: '',
     duracion: '',
@@ -17,16 +18,28 @@ export default function AdminPage() {
     archivo: null 
   })
   const [subiendo, setSubiendo] = useState(false)
+  const [editandoId, setEditandoId] = useState(null)
   const [mensaje, setMensaje] = useState('')
   const [error, setError] = useState('')
   const [filtro, setFiltro] = useState('')
+  const [fechaDesde, setFechaDesde] = useState('')
+  const [fechaHasta, setFechaHasta] = useState('')
+  const [filtroTipo, setFiltroTipo] = useState('')
   const { token, logout } = useAuth()
 
-  const cargarCertificados = async (q = '') => {
+  const cargarCertificados = async (opts = {}) => {
     try {
-      const url = q 
-        ? `${API_BASE}/api/certificados?q=${encodeURIComponent(q)}` 
-        : `${API_BASE}/api/certificados`
+      const q = opts.q !== undefined ? opts.q : filtro
+      const fd = opts.fechaDesde !== undefined ? opts.fechaDesde : fechaDesde
+      const fh = opts.fechaHasta !== undefined ? opts.fechaHasta : fechaHasta
+      const ft = opts.filtroTipo !== undefined ? opts.filtroTipo : filtroTipo
+      const searchParams = new URLSearchParams()
+      if (q && q.trim()) searchParams.set('q', q.trim())
+      if (fd) searchParams.set('fecha_desde', fd)
+      if (fh) searchParams.set('fecha_hasta', fh)
+      if (ft) searchParams.set('tipo', ft)
+      const query = searchParams.toString()
+      const url = query ? `${API_BASE}/api/certificados?${query}` : `${API_BASE}/api/certificados`
       const resp = await fetch(url)
       if (resp.ok) {
         const data = await resp.json()
@@ -44,7 +57,37 @@ export default function AdminPage() {
   const handleFiltroChange = (e) => {
     const val = e.target.value
     setFiltro(val)
-    cargarCertificados(val)
+    cargarCertificados({ q: val })
+  }
+
+  const handleFechaDesdeChange = (e) => {
+    const val = e.target.value
+    setFechaDesde(val)
+    cargarCertificados({ fechaDesde: val })
+  }
+
+  const handleFechaHastaChange = (e) => {
+    const val = e.target.value
+    setFechaHasta(val)
+    cargarCertificados({ fechaHasta: val })
+  }
+
+  const handleFiltroTipoChange = (e) => {
+    const val = e.target.value
+    setFiltroTipo(val)
+    cargarCertificados({ filtroTipo: val })
+  }
+
+  const aplicarFiltros = () => {
+    cargarCertificados()
+  }
+
+  const limpiarFiltros = () => {
+    setFiltro('')
+    setFechaDesde('')
+    setFechaHasta('')
+    setFiltroTipo('')
+    cargarCertificados({ q: '', fechaDesde: '', fechaHasta: '', filtroTipo: '' })
   }
 
   const manejarCambioArchivo = (e) => {
@@ -54,8 +97,8 @@ export default function AdminPage() {
 
   const manejarCambioDNI = (e) => {
     const valor = e.target.value
-    // Solo permitir números
-    if (valor === '' || /^\d+$/.test(valor)) {
+    // Solo números, máximo 8 dígitos
+    if (valor === '' || (/^\d+$/.test(valor) && valor.length <= 8)) {
       setForm((prev) => ({ ...prev, dni: valor }))
     }
   }
@@ -69,42 +112,103 @@ export default function AdminPage() {
     setMensaje('')
     setError('')
 
-    if (!form.nombre || !form.dni || !form.archivo) {
-      setError('Los campos obligatorios son: Nombre, DNI y Archivo PDF')
+    if (!form.nombre || !form.dni) {
+      setError('Los campos obligatorios son: Nombre y DNI son obligatorios')
       return
     }
 
-    const formData = new FormData()
-    formData.append('nombre', form.nombre)
-    formData.append('dni', form.dni)
-    formData.append('tipo', form.tipo || '')
-    formData.append('codigo', form.codigo || '')
-    formData.append('certificado_nombre', form.certificado_nombre || '')
-    formData.append('duracion', form.duracion || '')
-    formData.append('fecha_emision', form.fecha_emision || '')
-    formData.append('fecha_caducidad', form.fecha_caducidad || '')
-    formData.append('archivo', form.archivo)
+    if (!editandoId && !form.archivo) {
+      setError('Para crear un certificado nuevo debes adjuntar el archivo PDF')
+      return
+    }
 
+    if (form.dni.length !== 8) {
+      setError('El DNI debe tener exactamente 8 dígitos')
+      return
+    }
+
+    if (form.nombre.trim().length > 200) {
+      setError('El nombre no puede superar 200 caracteres')
+      return
+    }
+
+    if (form.fecha_emision && form.fecha_caducidad && form.fecha_caducidad < form.fecha_emision) {
+      setError('La fecha de caducidad no puede ser anterior a la fecha de emisión')
+      return
+    }
+
+    const hoy = new Date().toISOString().slice(0, 10)
+    if (form.fecha_emision && form.fecha_emision > hoy) {
+      setError('La fecha de emisión no puede ser futura')
+      return
+    }
+
+    const tipoEnviar = form.tipo === 'Otro' ? (form.tipo_otro || '').trim() : (form.tipo || '')
     setSubiendo(true)
     try {
-      const resp = await fetch(`${API_BASE}/api/certificados`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData,
-      })
-      
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}))
-        throw new Error(data.error || 'Error al subir certificado')
+      if (editandoId) {
+        // Actualizar certificado (sin cambiar PDF)
+        const payload = {
+          nombre: form.nombre,
+          dni: form.dni,
+          tipo: tipoEnviar,
+          codigo: form.codigo || '',
+          certificado_nombre: form.certificado_nombre || '',
+          duracion: form.duracion || '',
+          fecha_emision: form.fecha_emision || '',
+          fecha_caducidad: form.fecha_caducidad || '',
+        }
+
+        const resp = await fetch(`${API_BASE}/api/certificados/${editandoId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload),
+        })
+
+        if (!resp.ok) {
+          const data = await resp.json().catch(() => ({}))
+          throw new Error(data.error || 'Error al actualizar certificado')
+        }
+
+        setMensaje('Certificado actualizado exitosamente.')
+      } else {
+        // Crear nuevo certificado
+        const formData = new FormData()
+        formData.append('nombre', form.nombre)
+        formData.append('dni', form.dni)
+        formData.append('tipo', tipoEnviar)
+        formData.append('codigo', form.codigo || '')
+        formData.append('certificado_nombre', form.certificado_nombre || '')
+        formData.append('duracion', form.duracion || '')
+        formData.append('fecha_emision', form.fecha_emision || '')
+        formData.append('fecha_caducidad', form.fecha_caducidad || '')
+        formData.append('archivo', form.archivo)
+
+        const resp = await fetch(`${API_BASE}/api/certificados`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData,
+        })
+        
+        if (!resp.ok) {
+          const data = await resp.json().catch(() => ({}))
+          throw new Error(data.error || 'Error al subir certificado')
+        }
+
+        setMensaje('Certificado creado exitosamente.')
       }
 
-      setMensaje('Certificado creado exitosamente.')
+      // Reset común tras crear/editar
       setForm({ 
         nombre: '', 
         dni: '', 
         tipo: '',
+        tipo_otro: '',
         codigo: '',
         certificado_nombre: '',
         duracion: '',
@@ -112,11 +216,13 @@ export default function AdminPage() {
         fecha_caducidad: '',
         archivo: null 
       })
-      // Reset input file manually
+      setEditandoId(null)
+
+      // Reset input file manualmente
       const fileInput = document.getElementById('fileInput')
       if (fileInput) fileInput.value = ''
       
-      cargarCertificados(filtro)
+      cargarCertificados()
     } catch (err) {
       console.error(err)
       setError(err.message)
@@ -125,16 +231,98 @@ export default function AdminPage() {
     }
   }
 
+  const handleEditarCertificado = (cert) => {
+    setMensaje('')
+    setError('')
+    setEditandoId(cert.id)
+
+    // Resolver tipo / tipo_otro
+    const tiposFijos = ['Curso', 'Taller', 'Programa', 'Diplomado', 'Inducción']
+    let tipo = ''
+    let tipo_otro = ''
+    if (cert.tipo && tiposFijos.includes(cert.tipo)) {
+      tipo = cert.tipo
+      tipo_otro = ''
+    } else if (cert.tipo) {
+      tipo = 'Otro'
+      tipo_otro = cert.tipo
+    }
+
+    const toDateInput = (value) => {
+      if (!value) return ''
+      // Asegurar formato YYYY-MM-DD
+      const str = String(value)
+      return str.length >= 10 ? str.slice(0, 10) : str
+    }
+
+    setForm(prev => ({
+      ...prev,
+      nombre: cert.nombre || '',
+      dni: cert.dni || '',
+      tipo,
+      tipo_otro,
+      codigo: cert.codigo || '',
+      certificado_nombre: cert.certificado_nombre || '',
+      duracion: cert.duracion || '',
+      fecha_emision: toDateInput(cert.fecha_emision),
+      fecha_caducidad: toDateInput(cert.fecha_caducidad),
+      archivo: null,
+    }))
+  }
+
+  const handleEliminarCertificado = async (cert) => {
+    const confirmar = window.confirm(`¿Seguro que deseas eliminar el certificado de "${cert.nombre}"? Esta acción no se puede deshacer.`)
+    if (!confirmar) return
+
+    setMensaje('')
+    setError('')
+
+    try {
+      const resp = await fetch(`${API_BASE}/api/certificados/${cert.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+      })
+
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}))
+        throw new Error(data.error || 'Error al eliminar certificado')
+      }
+
+      setResultados(prev => prev.filter(c => c.id !== cert.id))
+      setMensaje('Certificado eliminado correctamente.')
+
+      // Si estábamos editando este mismo, resetear el formulario
+      if (editandoId === cert.id) {
+        setEditandoId(null)
+        setForm({ 
+          nombre: '', 
+          dni: '', 
+          tipo: '',
+          tipo_otro: '',
+          codigo: '',
+          certificado_nombre: '',
+          duracion: '',
+          fecha_emision: '',
+          fecha_caducidad: '',
+          archivo: null 
+        })
+        const fileInput = document.getElementById('fileInput')
+        if (fileInput) fileInput.value = ''
+      }
+    } catch (err) {
+      console.error(err)
+      setError(err.message)
+    }
+  }
+
   return (
     <div className="app app-admin">
       <aside className="admin-sidebar">
         <div>
           <div className="admin-brand">
-            <div className="admin-logo">SI</div>
-            <div>
-              <div className="admin-brand-name">SITech</div>
-              <div className="admin-brand-role">Admin Panel</div>
-            </div>
+            <img src="/logo.jpg" alt="Logo" className="admin-brand-logo" />
           </div>
           <nav className="admin-menu">
             <button className="admin-menu-item active">Certificados</button>
@@ -165,6 +353,40 @@ export default function AdminPage() {
                   value={filtro}
                   onChange={handleFiltroChange}
                 />
+                <label className="admin-filter-label">
+                  Fecha desde
+                  <input
+                    type="date"
+                    value={fechaDesde}
+                    onChange={handleFechaDesdeChange}
+                  />
+                </label>
+                <label className="admin-filter-label">
+                  Fecha hasta
+                  <input
+                    type="date"
+                    value={fechaHasta}
+                    onChange={handleFechaHastaChange}
+                  />
+                </label>
+                <label className="admin-filter-label">
+                  Tipo
+                  <select value={filtroTipo} onChange={handleFiltroTipoChange}>
+                    <option value="">Todos</option>
+                    <option value="Curso">Curso</option>
+                    <option value="Taller">Taller</option>
+                    <option value="Programa">Programa</option>
+                    <option value="Diplomado">Diplomado</option>
+                    <option value="Inducción">Inducción</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </label>
+                <button type="button" className="admin-btn admin-btn-secondary" onClick={aplicarFiltros}>
+                  Aplicar filtros
+                </button>
+                <button type="button" className="admin-btn admin-btn-secondary" onClick={limpiarFiltros}>
+                  Eliminar filtros
+                </button>
               </div>
             </div>
 
@@ -201,9 +423,25 @@ export default function AdminPage() {
                           : '-'}
                       </td>
                       <td>
-                        <a href={`${API_BASE}${c.url}`} target="_blank" rel="noreferrer">
-                          Ver PDF
-                        </a>
+                        <div className="admin-actions">
+                          <a href={`${API_BASE}${c.url}`} target="_blank" rel="noreferrer">
+                            Ver PDF
+                          </a>
+                          <button
+                            type="button"
+                            className="admin-action-button"
+                            onClick={() => handleEditarCertificado(c)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className="admin-action-button admin-action-danger"
+                            onClick={() => handleEliminarCertificado(c)}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -232,7 +470,8 @@ export default function AdminPage() {
                   type="text"
                   value={form.dni}
                   onChange={manejarCambioDNI}
-                  placeholder="Ej: 12345678"
+                  placeholder="8 dígitos"
+                  maxLength={8}
                   required
                 />
               </label>
@@ -249,8 +488,20 @@ export default function AdminPage() {
                   <option value="Programa">Programa</option>
                   <option value="Diplomado">Diplomado</option>
                   <option value="Inducción">Inducción</option>
+                  <option value="Otro">Otro</option>
                 </select>
               </label>
+              {form.tipo === 'Otro' && (
+                <label>
+                  Especifique el tipo
+                  <input
+                    type="text"
+                    value={form.tipo_otro}
+                    onChange={manejarCambioCampo('tipo_otro')}
+                    placeholder="Ej: Capacitación, Seminario..."
+                  />
+                </label>
+              )}
 
               <label>
                 Código

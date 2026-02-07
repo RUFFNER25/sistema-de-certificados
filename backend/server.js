@@ -206,15 +206,46 @@ app.post('/api/certificados', authenticateToken, upload.single('archivo'), async
       return res.status(400).json({ error: 'archivo PDF obligatorio' });
     }
 
-    // Validar que DNI solo contenga números
-    if (!/^\d+$/.test(dni.trim())) {
-      return res.status(400).json({ error: 'El DNI solo debe contener números' });
+    // Validar DNI: exactamente 8 dígitos
+    const dniTrim = dni.trim();
+    if (!/^\d{8}$/.test(dniTrim)) {
+      return res.status(400).json({ error: 'El DNI debe tener exactamente 8 dígitos numéricos' });
     }
 
-    // Convertir fecha_caducidad vacía o guion a NULL
-    const fechaCaducidadFinal = (!fecha_caducidad || fecha_caducidad.trim() === '' || fecha_caducidad === '-') 
-      ? null 
-      : fecha_caducidad;
+    // Nombre: longitud razonable
+    const nombreTrim = nombre.trim();
+    if (nombreTrim.length > 200) {
+      return res.status(400).json({ error: 'El nombre no puede superar 200 caracteres' });
+    }
+
+    // Código único: si se envía código, no puede repetirse
+    const codigoTrim = codigo && typeof codigo === 'string' ? codigo.trim() : '';
+    if (codigoTrim) {
+      const existCodigo = await pool.query(
+        'SELECT id FROM certificados WHERE codigo = $1',
+        [codigoTrim]
+      );
+      if (existCodigo.rows.length > 0) {
+        return res.status(400).json({ error: 'Ya existe un certificado con ese código. Use un código distinto.' });
+      }
+    }
+
+    // Fecha de emisión: no puede ser futura
+    if (fecha_emision) {
+      const hoy = new Date().toISOString().slice(0, 10);
+      if (fecha_emision > hoy) {
+        return res.status(400).json({ error: 'La fecha de emisión no puede ser futura' });
+      }
+    }
+
+    // Si hay ambas fechas, caducidad debe ser >= emisión
+    const fechaEmisionVal = fecha_emision || null;
+    let fechaCaducidadFinal = (!fecha_caducidad || String(fecha_caducidad).trim() === '' || fecha_caducidad === '-')
+      ? null
+      : String(fecha_caducidad).trim();
+    if (fechaEmisionVal && fechaCaducidadFinal && fechaCaducidadFinal < fechaEmisionVal) {
+      return res.status(400).json({ error: 'La fecha de caducidad no puede ser anterior a la fecha de emisión' });
+    }
 
     const result = await pool.query(
       `INSERT INTO certificados (
@@ -223,11 +254,11 @@ app.post('/api/certificados', authenticateToken, upload.single('archivo'), async
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
       RETURNING id, creado_en, fecha_emision, fecha_caducidad`,
       [
-        nombre.trim(), 
-        dni.trim(), 
+        nombreTrim,
+        dniTrim,
         req.file.filename,
         tipo?.trim() || null,
-        codigo?.trim() || null,
+        codigoTrim || null,
         certificado_nombre?.trim() || null,
         duracion?.trim() || null,
         fecha_emision || null,
@@ -256,31 +287,198 @@ app.post('/api/certificados', authenticateToken, upload.single('archivo'), async
   }
 });
 
-// Buscar certificados (PÚBLICO)
+// Actualizar certificado (PROTEGIDO, sin cambiar PDF)
+app.put('/api/certificados/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { 
+      nombre, 
+      dni, 
+      tipo, 
+      codigo, 
+      certificado_nombre, 
+      duracion, 
+      fecha_emision, 
+      fecha_caducidad 
+    } = req.body;
+
+    if (!nombre || !dni) {
+      return res.status(400).json({ error: 'nombre y dni son obligatorios' });
+    }
+
+    // Validar DNI: exactamente 8 dígitos
+    const dniTrim = String(dni).trim();
+    if (!/^\d{8}$/.test(dniTrim)) {
+      return res.status(400).json({ error: 'El DNI debe tener exactamente 8 dígitos numéricos' });
+    }
+
+    // Nombre: longitud razonable
+    const nombreTrim = String(nombre).trim();
+    if (nombreTrim.length > 200) {
+      return res.status(400).json({ error: 'El nombre no puede superar 200 caracteres' });
+    }
+
+    // Código único: si se envía código, no puede repetirse (salvo en el mismo id)
+    const codigoTrim = codigo && typeof codigo === 'string' ? codigo.trim() : '';
+    if (codigoTrim) {
+      const existCodigo = await pool.query(
+        'SELECT id FROM certificados WHERE codigo = $1 AND id <> $2',
+        [codigoTrim, id]
+      );
+      if (existCodigo.rows.length > 0) {
+        return res.status(400).json({ error: 'Ya existe un certificado con ese código. Use un código distinto.' });
+      }
+    }
+
+    // Fecha de emisión: no puede ser futura
+    if (fecha_emision) {
+      const hoy = new Date().toISOString().slice(0, 10);
+      if (fecha_emision > hoy) {
+        return res.status(400).json({ error: 'La fecha de emisión no puede ser futura' });
+      }
+    }
+
+    // Si hay ambas fechas, caducidad debe ser >= emisión
+    const fechaEmisionVal = fecha_emision || null;
+    let fechaCaducidadFinal = (!fecha_caducidad || String(fecha_caducidad).trim() === '' || fecha_caducidad === '-')
+      ? null
+      : String(fecha_caducidad).trim();
+    if (fechaEmisionVal && fechaCaducidadFinal && fechaCaducidadFinal < fechaEmisionVal) {
+      return res.status(400).json({ error: 'La fecha de caducidad no puede ser anterior a la fecha de emisión' });
+    }
+
+    const result = await pool.query(
+      `UPDATE certificados
+       SET nombre = $1,
+           dni = $2,
+           tipo = $3,
+           codigo = $4,
+           certificado_nombre = $5,
+           duracion = $6,
+           fecha_emision = $7,
+           fecha_caducidad = $8
+       WHERE id = $9
+       RETURNING id, nombre, dni, archivo, tipo, codigo, certificado_nombre, duracion, fecha_emision, fecha_caducidad, creado_en`,
+      [
+        nombreTrim,
+        dniTrim,
+        tipo?.trim() || null,
+        codigoTrim || null,
+        certificado_nombre?.trim() || null,
+        duracion?.trim() || null,
+        fecha_emision || null,
+        fechaCaducidadFinal,
+        id,
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Certificado no encontrado' });
+    }
+
+    const row = result.rows[0];
+
+    return res.json({
+      id: row.id,
+      nombre: row.nombre,
+      dni: row.dni,
+      archivo: row.archivo,
+      tipo: row.tipo,
+      codigo: row.codigo,
+      certificado_nombre: row.certificado_nombre,
+      duracion: row.duracion,
+      fecha_emision: row.fecha_emision,
+      fecha_caducidad: row.fecha_caducidad,
+      creado_en: row.creado_en,
+      url: `/files/${row.archivo}`,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Error al actualizar certificado' });
+  }
+});
+
+// Eliminar certificado (PROTEGIDO)
+app.delete('/api/certificados/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      'SELECT archivo FROM certificados WHERE id = $1',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Certificado no encontrado' });
+    }
+
+    const archivo = result.rows[0].archivo;
+
+    await pool.query('DELETE FROM certificados WHERE id = $1', [id]);
+
+    if (archivo) {
+      const filePath = path.join(uploadsDir, archivo);
+      fs.unlink(filePath, (err) => {
+        if (err && err.code !== 'ENOENT') {
+          console.error('Error al eliminar archivo PDF:', err);
+        }
+      });
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Error al eliminar certificado' });
+  }
+});
+
+// Buscar certificados (PÚBLICO) - con filtros opcionales: q, fecha_desde, fecha_hasta, tipo
 app.get('/api/certificados', async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, fecha_desde, fecha_hasta, tipo } = req.query;
 
-    let rows;
-    if (!q) {
-      const result = await pool.query(
-        `SELECT id, nombre, dni, archivo, tipo, codigo, certificado_nombre, 
-         duracion, fecha_emision, fecha_caducidad, creado_en 
-         FROM certificados ORDER BY creado_en DESC LIMIT 50`
-      );
-      rows = result.rows;
-    } else {
-      const like = `%${q.trim()}%`;
-      const result = await pool.query(
-        `SELECT id, nombre, dni, archivo, tipo, codigo, certificado_nombre, 
-         duracion, fecha_emision, fecha_caducidad, creado_en
-         FROM certificados
-         WHERE nombre ILIKE $1 OR dni ILIKE $1 OR codigo ILIKE $1
-         ORDER BY creado_en DESC`,
-        [like]
-      );
-      rows = result.rows;
+    const conditions = [];
+    const params = [];
+    let paramIndex = 1;
+
+    if (q && String(q).trim()) {
+      conditions.push(`(nombre ILIKE $${paramIndex} OR dni ILIKE $${paramIndex} OR codigo ILIKE $${paramIndex})`);
+      params.push(`%${String(q).trim()}%`);
+      paramIndex++;
     }
+    if (fecha_desde) {
+      conditions.push(`fecha_emision >= $${paramIndex}`);
+      params.push(fecha_desde);
+      paramIndex++;
+    }
+    if (fecha_hasta) {
+      conditions.push(`fecha_emision <= $${paramIndex}`);
+      params.push(fecha_hasta);
+      paramIndex++;
+    }
+    if (tipo && String(tipo).trim()) {
+      const tipoVal = String(tipo).trim();
+      if (tipoVal === 'Otro') {
+        // "Otro" = tipos que no son los predefinidos
+        conditions.push(`(tipo IS NULL OR tipo NOT IN ('Curso', 'Taller', 'Programa', 'Diplomado', 'Inducción'))`);
+      } else {
+        conditions.push(`tipo = $${paramIndex}`);
+        params.push(tipoVal);
+        paramIndex++;
+      }
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const sql = `
+      SELECT id, nombre, dni, archivo, tipo, codigo, certificado_nombre,
+             duracion, fecha_emision, fecha_caducidad, creado_en
+      FROM certificados
+      ${whereClause}
+      ORDER BY creado_en DESC
+      LIMIT 100
+    `;
+    const result = await pool.query(sql, params);
+    const rows = result.rows;
 
     const mapped = rows.map((row) => ({
       ...row,

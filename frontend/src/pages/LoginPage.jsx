@@ -29,7 +29,7 @@ export default function LoginPage() {
       <div className="login-card">
         <div className="login-header">
           <div className="login-logo">
-            <span role="img" aria-label="lock">🔒</span>
+            <img src="/logo.jpg" alt="SITech" className="login-logo-img" />
           </div>
           <h1 className="login-title">Bienvenido de nuevo</h1>
           <p className="login-subtitle">Ingresa tus credenciales para acceder al panel.</p>
