@@ -322,7 +322,7 @@ export default function AdminPage() {
       <aside className="admin-sidebar">
         <div>
           <div className="admin-brand">
-            <img src="/logo.jpg" alt="Logo" className="admin-brand-logo" />
+            <img src="/logo.png" alt="Logo" className="admin-brand-logo" />
           </div>
           <nav className="admin-menu">
             <button className="admin-menu-item active">Certificados</button>
