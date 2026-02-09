@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 
 export default function AdminPage() {
   const [resultados, setResultados] = useState([])
+  const [menuAbierto, setMenuAbierto] = useState(false)
   const [form, setForm] = useState({ 
     nombre: '', 
     dni: '', 
@@ -318,8 +319,16 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="app app-admin">
-      <aside className="admin-sidebar">
+    <div className={`app app-admin ${menuAbierto ? 'mobile-menu-open' : ''}`}>
+      <button 
+        className="admin-mobile-toggle" 
+        onClick={() => setMenuAbierto(!menuAbierto)}
+        aria-label="Menu"
+      >
+        {menuAbierto ? '✕' : '☰'}
+      </button>
+
+      <aside className={`admin-sidebar ${menuAbierto ? 'active' : ''}`}>
         <div>
           <div className="admin-brand">
             <img src="/logo.png" alt="Logo" className="admin-brand-logo" />
@@ -336,6 +345,8 @@ export default function AdminPage() {
         </div>
       </aside>
 
+      {menuAbierto && <div className="admin-sidebar-overlay" onClick={() => setMenuAbierto(false)}></div>}
+
       <main className="admin-main">
         <header className="admin-header">
           <h1>Gestión de Certificados</h1>
@@ -347,12 +358,15 @@ export default function AdminPage() {
             <div className="admin-list-header">
               <h2>Listado de Certificados</h2>
               <div className="admin-filters">
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre o DNI..."
-                  value={filtro}
-                  onChange={handleFiltroChange}
-                />
+                <label className="admin-filter-label">
+                  DNI o Nombres
+                  <input
+                    type="text"
+                    placeholder="Buscar..."
+                    value={filtro}
+                    onChange={handleFiltroChange}
+                  />
+                </label>
                 <label className="admin-filter-label">
                   Fecha desde
                   <input
@@ -381,7 +395,7 @@ export default function AdminPage() {
                     <option value="Otro">Otro</option>
                   </select>
                 </label>
-                <button type="button" className="admin-btn admin-btn-secondary" onClick={aplicarFiltros}>
+                <button type="button" className="admin-btn admin-btn-primary" onClick={aplicarFiltros}>
                   Aplicar filtros
                 </button>
                 <button type="button" className="admin-btn admin-btn-secondary" onClick={limpiarFiltros}>
