@@ -125,17 +125,6 @@ async function initDb() {
       )
     `);
 
-    // Seed Admin si no existe
-    const res = await client.query('SELECT count(*) FROM usuarios');
-    if (parseInt(res.rows[0].count) === 0) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      await client.query(
-        'INSERT INTO usuarios (username, password_hash) VALUES ($1, $2)',
-        ['admin', hashedPassword]
-      );
-      console.log('Usuario admin creado por defecto: admin / admin123');
-    }
-
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK');
