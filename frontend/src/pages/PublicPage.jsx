@@ -41,11 +41,11 @@ export default function PublicPage() {
       setResultados(data || [])
       
       if (data.length === 0) {
-        setError('No se encontraron certificados con esos datos.')
+        setError('CONSULTA NO ENCONTRADA, INTENTE DE NUEVO')
       }
     } catch (err) {
       console.error('Error en búsqueda:', err)
-      setError(err.message || 'Ocurrió un error al buscar. Verifique que el servidor esté funcionando.')
+      setError('CONSULTA NO ENCONTRADA, INTENTE DE NUEVO')
     } finally {
       setCargando(false)
     }
@@ -125,7 +125,7 @@ export default function PublicPage() {
 
         {resultados.length === 0 ? (
           <div className="public-no-results">
-            No se encontraron certificados con esos datos.
+            CONSULTA NO ENCONTRADA, INTENTE DE NUEVO
           </div>
         ) : (
           <div className="public-results-list">

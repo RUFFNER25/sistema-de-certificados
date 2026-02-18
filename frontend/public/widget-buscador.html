@@ -1,4 +1,5 @@
 <!-- WIDGET BUSCADOR DE CERTIFICADOS - JC ECOGUARDIANS -->
+<meta charset="UTF-8">
 <div id="cert-widget-container">
   <style>
     :root {
@@ -66,26 +67,46 @@
 
     .widget-btn:hover { background: var(--accent-green-hover); }
 
+    .widget-advice {
+      margin-top: 20px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+      font-weight: 500;
+      text-align: center;
+    }
+
     /* Título único de resultados */
     .widget-results-title {
       font-size: 18px;
       font-weight: 600;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
       color: var(--text-main);
+      text-align: left;
     }
 
-    /* Lista de tarjetas compactas */
-    .widget-results-list { display: flex; flex-direction: column; gap: 20px; }
+    /* Lista de tarjetas compactas con layout responsivo */
+    .widget-results-list { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 30px; 
+      justify-content: flex-start;
+      width: 100%;
+      padding: 0;
+      margin: 0;
+    }
 
     .result-card {
       background: white;
       border: 1px solid #e2e8f0;
       border-radius: 10px;
-      padding: 20px 24px;
-      max-width: 520px;
+      padding: 24px;
+      width: 410px; /* Ancho fijo para forzar 2 por fila en 900px */
+      flex: 0 1 410px; /* No crece, permite encogerse si es necesario */
       transition: box-shadow 0.2s;
+      box-sizing: border-box;
     }
-    .result-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    
+    .result-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
     .result-card-header {
       display: flex;
@@ -163,20 +184,25 @@
     }
     .result-card-download svg { width: 18px; height: 18px; }
 
-    @media (max-width: 600px) { .widget-search-form { flex-direction: column; } .result-card { padding: 16px; } }
+    @media (max-width: 650px) { 
+      .widget-search-form { flex-direction: column; } 
+      .result-card { width: 100%; max-width: 100%; min-width: 100%; padding: 16px; } 
+      .widget-results-list { flex-direction: column; align-items: flex-start; }
+    }
   </style>
 
   <div class="widget-search-section">
     <h2 class="widget-title">Validar certificados</h2>
     <form class="widget-search-form" id="certForm">
       <select id="certType" class="widget-select">
-        <option value="dni">DNI</option>
+        <option value="dni">DNI / CE / PAS</option>
         <option value="nombre">Nombres y apellidos</option>
-        <option value="codigo">Código</option>
+        <option value="codigo">Código de certificado</option>
       </select>
-      <input type="text" id="certInput" class="widget-input" placeholder="Ej: 70552292">
+      <input type="text" id="certInput" class="widget-input" placeholder="Ingrese documento" required>
       <button type="submit" id="certBtn" class="widget-btn">BUSCAR</button>
     </form>
+    <p class="widget-advice">Ingrese los siguientes datos: DNI/CE/PAS o Apellidos y nombres o código de certificado</p>
     <div id="certMsg" style="margin-top: 15px; font-size: 13px;"></div>
   </div>
 
@@ -184,15 +210,48 @@
 
   <script>
     (function() {
-      const API = 'http://localhost:4000'; // CAMBIAR POR TU IP/DOMINIO VPS
+      const API = 'https://admincertificados.jcecoguardians.com'; 
       const form = document.getElementById('certForm');
       const results = document.getElementById('certResults');
       const msg = document.getElementById('certMsg');
+      const certType = document.getElementById('certType');
+      const certInput = document.getElementById('certInput');
+
+      // Restricciones dinámicas
+      const updateInputRestrictions = () => {
+        const type = certType.value;
+        certInput.value = '';
+        if (type === 'dni') {
+          certInput.placeholder = 'DNI, CE o PAS';
+          certInput.maxLength = 12;
+          // Solo números y letras para documentos
+          certInput.oninput = (e) => e.target.value = e.target.value.replace(/[^0-9a-zA-Z]/g, '');
+        } else if (type === 'nombre') {
+          certInput.placeholder = 'Ej: JUAN PEREZ';
+          certInput.maxLength = 100;
+          // Solo letras y espacios para nombres
+          certInput.oninput = (e) => e.target.value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+        } else if (type === 'codigo') {
+          certInput.placeholder = 'Ej: CERT-12345';
+          certInput.maxLength = 50;
+          certInput.oninput = null;
+        }
+      };
+
+      certType.onchange = updateInputRestrictions;
+      updateInputRestrictions(); // Init
 
       form.onsubmit = async (e) => {
         e.preventDefault();
-        const query = document.getElementById('certInput').value.trim();
+        const type = certType.value;
+        const query = certInput.value.trim();
+        
         if(!query) return alert('Ingrese un valor');
+        
+        // Validación básica por tipo
+        if (type === 'dni' && query.length < 8) {
+          return alert('El documento debe tener al menos 8 caracteres');
+        }
 
         document.getElementById('certBtn').innerText = 'BUSCANDO...';
         results.innerHTML = '';
@@ -203,7 +262,7 @@
           const data = await r.json();
           
           if(data.length === 0) {
-            msg.innerText = 'No se encontraron resultados.';
+            msg.innerText = 'CONSULTA NO ENCONTRADA, INTENTE DE NUEVO';
           } else {
             const cal = (d) => d ? new Date(d).toLocaleDateString('es-PE') : '-';
             const iconCal = '<rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>';
@@ -235,7 +294,7 @@
             `).join('') + '</div>';
           }
         } catch(e) { 
-          msg.innerText = 'Error de conexión con el servidor.';
+          msg.innerText = 'CONSULTA NO ENCONTRADA, INTENTE DE NUEVO';
         } finally {
           document.getElementById('certBtn').innerText = 'BUSCAR';
         }

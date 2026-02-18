@@ -26,6 +26,8 @@ export default function AdminPage() {
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('')
+  const [pagina, setPagina] = useState(1)
+  const [totalPaginas, setTotalPaginas] = useState(1)
   const { token, logout } = useAuth()
 
   const cargarCertificados = async (opts = {}) => {
@@ -34,17 +36,21 @@ export default function AdminPage() {
       const fd = opts.fechaDesde !== undefined ? opts.fechaDesde : fechaDesde
       const fh = opts.fechaHasta !== undefined ? opts.fechaHasta : fechaHasta
       const ft = opts.filtroTipo !== undefined ? opts.filtroTipo : filtroTipo
+      
       const searchParams = new URLSearchParams()
       if (q && q.trim()) searchParams.set('q', q.trim())
       if (fd) searchParams.set('fecha_desde', fd)
       if (fh) searchParams.set('fecha_hasta', fh)
       if (ft) searchParams.set('tipo', ft)
+
       const query = searchParams.toString()
       const url = query ? `${API_BASE}/api/certificados?${query}` : `${API_BASE}/api/certificados`
       const resp = await fetch(url)
       if (resp.ok) {
         const data = await resp.json()
-        setResultados(data)
+        setResultados(data || [])
+        // Calculamos total de páginas basado en el total recibido
+        setTotalPaginas(Math.ceil((data.length || 0) / 10) || 1)
       }
     } catch (err) {
       console.error(err)
@@ -58,28 +64,33 @@ export default function AdminPage() {
   const handleFiltroChange = (e) => {
     const val = e.target.value
     setFiltro(val)
+    setPagina(1)
     cargarCertificados({ q: val })
   }
 
   const handleFechaDesdeChange = (e) => {
     const val = e.target.value
     setFechaDesde(val)
+    setPagina(1)
     cargarCertificados({ fechaDesde: val })
   }
 
   const handleFechaHastaChange = (e) => {
     const val = e.target.value
     setFechaHasta(val)
+    setPagina(1)
     cargarCertificados({ fechaHasta: val })
   }
 
   const handleFiltroTipoChange = (e) => {
     const val = e.target.value
     setFiltroTipo(val)
+    setPagina(1)
     cargarCertificados({ filtroTipo: val })
   }
 
   const aplicarFiltros = () => {
+    setPagina(1)
     cargarCertificados()
   }
 
@@ -88,8 +99,18 @@ export default function AdminPage() {
     setFechaDesde('')
     setFechaHasta('')
     setFiltroTipo('')
+    setPagina(1)
     cargarCertificados({ q: '', fechaDesde: '', fechaHasta: '', filtroTipo: '' })
   }
+
+  const handleCambiarPagina = (nuevaPagina) => {
+    if (nuevaPagina >= 1 && nuevaPagina <= totalPaginas) {
+      setPagina(nuevaPagina)
+    }
+  }
+
+  // Obtener solo los 10 resultados de la página actual
+  const resultadosPaginados = resultados.slice((pagina - 1) * 10, pagina * 10)
 
   const manejarCambioArchivo = (e) => {
     const file = e.target.files?.[0] ?? null
@@ -420,7 +441,7 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {resultados.map((c) => (
+                  {resultadosPaginados.map((c) => (
                     <tr key={c.id}>
                       <td>{c.nombre}</td>
                       <td>{c.dni}</td>
@@ -461,6 +482,28 @@ export default function AdminPage() {
                   ))}
                 </tbody>
               </table>
+            )}
+
+            {totalPaginas > 1 && (
+              <div className="admin-pagination">
+                <button 
+                  className="admin-btn admin-btn-secondary"
+                  disabled={pagina <= 1}
+                  onClick={() => handleCambiarPagina(pagina - 1)}
+                >
+                  Anterior
+                </button>
+                <span className="pagination-info">
+                  Página {pagina} de {totalPaginas}
+                </span>
+                <button 
+                  className="admin-btn admin-btn-secondary"
+                  disabled={pagina >= totalPaginas}
+                  onClick={() => handleCambiarPagina(pagina + 1)}
+                >
+                  Siguiente
+                </button>
+              </div>
             )}
           </div>
 

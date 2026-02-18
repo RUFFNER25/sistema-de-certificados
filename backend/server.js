@@ -7,10 +7,20 @@ const fs = require('fs');
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || 'secreto_super_seguro_cambiar_en_prod';
+
+// Rate limiter para el login
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5, // Limitar cada IP a 5 intentos de login por ventana de 15 minutos
+  message: { error: 'Demasiados intentos de inicio de sesión, intente de nuevo en 15 minutos' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Middlewares
 app.use(cors());
@@ -49,6 +59,8 @@ const pool = new Pool({
   connectionString:
     process.env.DATABASE_URL ||
     'postgres://postgres:postgres@localhost:5432/sistema_certificados',
+  // Asegurar UTF-8
+  options: '-c client_encoding=UTF8'
 });
 
 // Inicialización de DB
@@ -155,7 +167,7 @@ function authenticateToken(req, res, next) {
 // --- RUTAS ---
 
 // Login
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', loginLimiter, async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Faltan credenciales' });
@@ -459,7 +471,6 @@ app.get('/api/certificados', async (req, res) => {
     if (tipo && String(tipo).trim()) {
       const tipoVal = String(tipo).trim();
       if (tipoVal === 'Otro') {
-        // "Otro" = tipos que no son los predefinidos
         conditions.push(`(tipo IS NULL OR tipo NOT IN ('Curso', 'Taller', 'Programa', 'Diplomado', 'Inducción'))`);
       } else {
         conditions.push(`tipo = $${paramIndex}`);
@@ -475,7 +486,6 @@ app.get('/api/certificados', async (req, res) => {
       FROM certificados
       ${whereClause}
       ORDER BY creado_en DESC
-      LIMIT 100
     `;
     const result = await pool.query(sql, params);
     const rows = result.rows;
