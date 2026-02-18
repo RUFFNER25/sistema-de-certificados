@@ -13,6 +13,9 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || 'secreto_super_seguro_cambiar_en_prod';
 
+// Confiar en el proxy (necesario para obtener la IP real tras Nginx/Load Balancers)
+app.set('trust proxy', 1);
+
 // Rate limiter para el login
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
