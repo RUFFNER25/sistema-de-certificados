@@ -195,6 +195,14 @@ const getLocalDate = () => {
   return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 };
 
+// Función para agregar un día a una fecha (compensar pérdida por timezone de PostgreSQL)
+const addOneDay = (dateStr) => {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  date.setDate(date.getDate() + 1);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+};
+
 // Crear certificado (PROTEGIDO)
 app.post('/api/certificados', authenticateToken, upload.single('archivo'), async (req, res) => {
   try {
@@ -290,8 +298,8 @@ app.post('/api/certificados', authenticateToken, upload.single('archivo'), async
       codigo: row.codigo,
       certificado_nombre: row.certificado_nombre,
       duracion: row.duracion,
-      fecha_emision: row.fecha_emision,
-      fecha_caducidad: row.fecha_caducidad,
+      fecha_emision: addOneDay(row.fecha_emision),
+      fecha_caducidad: addOneDay(row.fecha_caducidad),
       creado_en: row.creado_en,
       url: `/files/${req.file.filename}`,
     });
@@ -404,8 +412,8 @@ app.put('/api/certificados/:id', authenticateToken, async (req, res) => {
       codigo: row.codigo,
       certificado_nombre: row.certificado_nombre,
       duracion: row.duracion,
-      fecha_emision: row.fecha_emision,
-      fecha_caducidad: row.fecha_caducidad,
+      fecha_emision: addOneDay(row.fecha_emision),
+      fecha_caducidad: addOneDay(row.fecha_caducidad),
       creado_en: row.creado_en,
       url: `/files/${row.archivo}`,
     });
@@ -497,6 +505,8 @@ app.get('/api/certificados', async (req, res) => {
 
     const mapped = rows.map((row) => ({
       ...row,
+      fecha_emision: addOneDay(row.fecha_emision),
+      fecha_caducidad: addOneDay(row.fecha_caducidad),
       url: `/files/${row.archivo}`,
     }));
 
