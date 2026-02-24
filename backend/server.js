@@ -188,11 +188,12 @@ app.post('/api/login', loginLimiter, async (req, res) => {
 // Servir PDFs estáticos
 app.use('/files', express.static(uploadsDir));
 
-// Función para obtener la fecha actual en formato YYYY-MM-DD usando la zona horaria local del servidor
+// Función para obtener la fecha actual en formato YYYY-MM-DD usando la zona horaria de Perú
 const getLocalDate = () => {
+  // Forzar zona horaria de Perú (UTC-5)
   const now = new Date();
-  // Restar el timezoneOffset para obtener la fecha en la zona horaria local
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const limaDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' }));
+  return limaDate.toISOString().slice(0, 10);
 };
 
 // Crear certificado (PROTEGIDO)
