@@ -210,10 +210,13 @@ app.post('/api/certificados', authenticateToken, upload.single('archivo'), async
       return res.status(400).json({ error: 'archivo PDF obligatorio' });
     }
 
-    // Validar DNI: exactamente 8 dígitos
-    const dniTrim = dni.trim();
-    if (!/^\d{8}$/.test(dniTrim)) {
-      return res.status(400).json({ error: 'El DNI debe tener exactamente 8 dígitos numéricos' });
+    // Validar documento de identidad (DNI o pasaporte)
+    const dniTrim = String(dni).trim();
+    if (!dniTrim) {
+      return res.status(400).json({ error: 'El documento de identidad es obligatorio' });
+    }
+    if (dniTrim.length > 20) {
+      return res.status(400).json({ error: 'El documento de identidad no puede superar 20 caracteres' });
     }
 
     // Nombre: longitud razonable
@@ -310,10 +313,13 @@ app.put('/api/certificados/:id', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'nombre y dni son obligatorios' });
     }
 
-    // Validar DNI: exactamente 8 dígitos
+    // Validar documento de identidad (DNI o pasaporte)
     const dniTrim = String(dni).trim();
-    if (!/^\d{8}$/.test(dniTrim)) {
-      return res.status(400).json({ error: 'El DNI debe tener exactamente 8 dígitos numéricos' });
+    if (!dniTrim) {
+      return res.status(400).json({ error: 'El documento de identidad es obligatorio' });
+    }
+    if (dniTrim.length > 20) {
+      return res.status(400).json({ error: 'El documento de identidad no puede superar 20 caracteres' });
     }
 
     // Nombre: longitud razonable

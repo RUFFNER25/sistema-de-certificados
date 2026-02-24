@@ -30,6 +30,14 @@ export default function AdminPage() {
   const [totalPaginas, setTotalPaginas] = useState(1)
   const { token, logout } = useAuth()
 
+  const formatearFecha = (valor) => {
+    if (!valor) return '-'
+    const str = String(valor).slice(0, 10)
+    const [yyyy, mm, dd] = str.split('-')
+    if (!yyyy || !mm || !dd) return str
+    return `${dd}/${mm}/${yyyy}`
+  }
+
   const cargarCertificados = async (opts = {}) => {
     try {
       const q = opts.q !== undefined ? opts.q : filtro
@@ -119,8 +127,8 @@ export default function AdminPage() {
 
   const manejarCambioDNI = (e) => {
     const valor = e.target.value
-    // Solo números, máximo 8 dígitos
-    if (valor === '' || (/^\d+$/.test(valor) && valor.length <= 8)) {
+    // Permitir DNI o pasaporte (letras y números), máx. 20 caracteres
+    if (valor.length <= 20) {
       setForm((prev) => ({ ...prev, dni: valor }))
     }
   }
@@ -144,8 +152,8 @@ export default function AdminPage() {
       return
     }
 
-    if (form.dni.length !== 8) {
-      setError('El DNI debe tener exactamente 8 dígitos')
+    if (form.dni.trim().length > 20) {
+      setError('El documento de identidad no puede superar 20 caracteres')
       return
     }
 
@@ -447,16 +455,8 @@ export default function AdminPage() {
                       <td>{c.dni}</td>
                       <td>{c.tipo || '-'}</td>
                       <td>{c.codigo || '-'}</td>
-                      <td>
-                        {c.fecha_emision 
-                          ? new Date(c.fecha_emision).toLocaleDateString() 
-                          : '-'}
-                      </td>
-                      <td>
-                        {c.fecha_caducidad 
-                          ? new Date(c.fecha_caducidad).toLocaleDateString() 
-                          : '-'}
-                      </td>
+                      <td>{formatearFecha(c.fecha_emision)}</td>
+                      <td>{formatearFecha(c.fecha_caducidad)}</td>
                       <td>
                         <div className="admin-actions">
                           <a href={`${API_BASE}${c.url}`} target="_blank" rel="noreferrer">
@@ -511,24 +511,24 @@ export default function AdminPage() {
             <h2>Nuevo Certificado</h2>
             <form className="form" onSubmit={manejarSubmit}>
               <label>
-                Nombres y Apellidos *
+                Apellidos y Nombres *
                 <input
                   type="text"
                   value={form.nombre}
                   onChange={manejarCambioCampo('nombre')}
-                  placeholder="Ej: Juan Perez"
+                  placeholder="Ej: Pérez García, Juan"
                   required
                 />
               </label>
               
               <label>
-                DNI * (solo números)
+                DNI/CE/PAS *
                 <input
                   type="text"
                   value={form.dni}
                   onChange={manejarCambioDNI}
-                  placeholder="8 dígitos"
-                  maxLength={8}
+                  placeholder="Ej: 70552292 o AA123456"
+                  maxLength={20}
                   required
                 />
               </label>

@@ -196,7 +196,7 @@
     <form class="widget-search-form" id="certForm">
       <select id="certType" class="widget-select">
         <option value="dni">DNI / CE / PAS</option>
-        <option value="nombre">Nombres y apellidos</option>
+        <option value="nombre">Apellidos y nombres</option>
         <option value="codigo">Código de certificado</option>
       </select>
       <input type="text" id="certInput" class="widget-input" placeholder="Ingrese documento" required>
@@ -227,7 +227,7 @@
           // Solo números y letras para documentos
           certInput.oninput = (e) => e.target.value = e.target.value.replace(/[^0-9a-zA-Z]/g, '');
         } else if (type === 'nombre') {
-          certInput.placeholder = 'Ej: JUAN PEREZ';
+          certInput.placeholder = 'Ej: PÉREZ GARCÍA, JUAN';
           certInput.maxLength = 100;
           // Solo letras y espacios para nombres
           certInput.oninput = (e) => e.target.value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
@@ -264,7 +264,12 @@
           if(data.length === 0) {
             msg.innerText = 'CONSULTA NO ENCONTRADA, INTENTE DE NUEVO';
           } else {
-            const cal = (d) => d ? new Date(d).toLocaleDateString('es-PE') : '-';
+            const cal = (d) => {
+              if (!d) return '-';
+              const str = String(d).slice(0, 10);
+              const parts = str.split('-');
+              return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : str;
+            };
             const iconCal = '<rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>';
             const metaRow = (svg, text) => `<li class="result-card-meta-item"><span class="result-card-meta-icon" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${svg}</svg></span><span>${text}</span></li>`;
 

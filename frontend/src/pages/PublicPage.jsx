@@ -81,7 +81,7 @@ export default function PublicPage() {
               onChange={(e) => setTipoBusqueda(e.target.value)}
             >
               <option value="dni">DNI</option>
-              <option value="nombre">Nombres y apellidos</option>
+              <option value="nombre">Apellidos y nombres</option>
               <option value="codigo">Código de certificado</option>
             </select>
             <input
@@ -91,7 +91,7 @@ export default function PublicPage() {
                 tipoBusqueda === 'dni' 
                   ? 'Ej: 70552292' 
                   : tipoBusqueda === 'nombre'
-                  ? 'Ej: Juan Perez'
+                  ? 'Ej: Pérez García, Juan'
                   : 'Ej: CERT-2024-001'
               }
               value={busqueda}
@@ -188,7 +188,7 @@ export default function PublicPage() {
                           <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
                         </svg>
                       </span>
-                      <span>Fecha de emisión: {new Date(c.fecha_emision).toLocaleDateString('es-PE')}</span>
+                      <span>Fecha de emisión: {String(c.fecha_emision).slice(0,10).split('-').reverse().join('/')}</span>
                     </li>
                   )}
                   <li className="result-card-meta-item">
@@ -200,7 +200,7 @@ export default function PublicPage() {
                         <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
                       </svg>
                     </span>
-                    <span>Fecha de caducidad: {c.fecha_caducidad ? new Date(c.fecha_caducidad).toLocaleDateString('es-PE') : '-'}</span>
+                    <span>Fecha de caducidad: {c.fecha_caducidad ? String(c.fecha_caducidad).slice(0,10).split('-').reverse().join('/') : '-'}</span>
                   </li>
                 </ul>
                 <a
