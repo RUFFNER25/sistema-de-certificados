@@ -188,6 +188,13 @@ app.post('/api/login', loginLimiter, async (req, res) => {
 // Servir PDFs estáticos
 app.use('/files', express.static(uploadsDir));
 
+// Función para obtener la fecha actual en formato YYYY-MM-DD usando la zona horaria local del servidor
+const getLocalDate = () => {
+  const now = new Date();
+  // Restar el timezoneOffset para obtener la fecha en la zona horaria local
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+};
+
 // Crear certificado (PROTEGIDO)
 app.post('/api/certificados', authenticateToken, upload.single('archivo'), async (req, res) => {
   try {
@@ -239,7 +246,7 @@ app.post('/api/certificados', authenticateToken, upload.single('archivo'), async
 
     // Fecha de emisión: no puede ser futura
     if (fecha_emision) {
-      const hoy = new Date().toISOString().slice(0, 10);
+      const hoy = getLocalDate();
       if (fecha_emision > hoy) {
         return res.status(400).json({ error: 'La fecha de emisión no puede ser futura' });
       }
@@ -342,7 +349,7 @@ app.put('/api/certificados/:id', authenticateToken, async (req, res) => {
 
     // Fecha de emisión: no puede ser futura
     if (fecha_emision) {
-      const hoy = new Date().toISOString().slice(0, 10);
+      const hoy = getLocalDate();
       if (fecha_emision > hoy) {
         return res.status(400).json({ error: 'La fecha de emisión no puede ser futura' });
       }
