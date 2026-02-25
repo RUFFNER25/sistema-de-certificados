@@ -35,7 +35,12 @@ export default function AdminPage() {
     const str = String(valor).slice(0, 10)
     const [yyyy, mm, dd] = str.split('-')
     if (!yyyy || !mm || !dd) return str
-    return `${dd}/${mm}/${yyyy}`
+    // Agregar 1 día para compensar timezone
+    const date = new Date(yyyy, mm - 1, parseInt(dd) + 1)
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${day}/${m}/${y}`
   }
 
   const cargarCertificados = async (opts = {}) => {
